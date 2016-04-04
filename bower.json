@@ -1,0 +1,27 @@
+{
+  "name": "socket-redis",
+  "main": "client/socket-redis.js",
+  "version": "0.1.6",
+  "homepage": "https://github.com/idlecool/socket-redis",
+  "authors": [
+    "Cargomedia <hello@cargomedia.ch>"
+  ],
+  "description": "WebSocket pub/sub server and client (with SockJS), exposing an API over Redis",
+  "keywords": [
+    "redis",
+    "sockjs",
+    "relay",
+    "bridge"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "sockjs-client": "~1.0.3"
+  }
+}
