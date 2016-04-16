@@ -74,7 +74,7 @@ var SocketRedis = (function() {
       sockJS.onmessage = function(event) {
         var data = JSON.parse(event.data);
         if (subscribes.has_channel(data.channel)) {
-          subscribers = subscribes.get(data.channel);
+          var subscribers = subscribes.get(data.channel);
           for (var idx in subscribers) {
             subscribers[idx].callback.call(handler, data.event, data.data);
           }
@@ -112,7 +112,7 @@ var SocketRedis = (function() {
 
   Client.prototype.get_subscribes = function() {
     return subscribes;
-  }
+  };
 
   /**
    * @param {String} channel
@@ -162,8 +162,12 @@ var SocketRedis = (function() {
    */
   var subscribe = function(channel, startStamp) {
     var subscribers = subscribes.get(channel);
+    console.log('channel', channel);
+    console.log('subscribers', subscribers);
     for (var idx in subscribers) {
-      subscriber = subscribers[idx];
+      var subscriber = subscribers[idx];
+      console.log('index', idx);
+      console.log('subscriber', subscriber);
       var event = subscriber.event;
       if (!startStamp) {
         startStamp = event.start || new Date().getTime();
