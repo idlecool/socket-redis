@@ -162,12 +162,8 @@ var SocketRedis = (function() {
    */
   var subscribe = function(channel, startStamp) {
     var subscribers = subscribes.get(channel);
-    console.log('channel', channel);
-    console.log('subscribers', subscribers);
     for (var idx in subscribers) {
       var subscriber = subscribers[idx];
-      console.log('index', idx);
-      console.log('subscriber', subscriber);
       var event = subscriber.event;
       if (!startStamp) {
         startStamp = event.start || new Date().getTime();
