@@ -1,7 +1,7 @@
 {
   "name": "socket-redis",
   "main": "client/socket-redis.js",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "homepage": "https://github.com/idlecool/socket-redis",
   "authors": [
     "Cargomedia <hello@cargomedia.ch>"

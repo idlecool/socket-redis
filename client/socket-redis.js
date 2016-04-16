@@ -22,6 +22,16 @@ var SocketRedis = (function() {
       }
     };
 
+    this.has_channel = function (channel) {
+      return this.subscribers.hasOwnProperty(channel);
+    };
+
+    this.delete_channel = function (channel) {
+      if (this.has_channel(channel)) {
+        delete subscribes[channel];
+      }
+    };
+
     this.set = function(channel, start, data, onmessage) {
       if (!this.subscribers.hasOwnProperty(channel)) {
         this.subscribers[channel] = [];
@@ -51,7 +61,7 @@ var SocketRedis = (function() {
       sockJS.onopen = function() {
         resetDelay();
         for (var channel in subscribes) {
-          if (subscribes.hasOwnProperty(channel)) {
+          if (subscribes.has_channel(channel)) {
             subscribe(channel, closeStamp);
           }
         }
@@ -63,8 +73,8 @@ var SocketRedis = (function() {
       };
       sockJS.onmessage = function(event) {
         var data = JSON.parse(event.data);
-        if (subscribes[data.channel]) {
-          for (var subscriber in subscribes[data.channel]) {
+        if (subscribes.has_channel(data.channel)) {
+          for (var subscriber in subscribes.get(data.channel)) {
             subscriber.callback.call(handler, data.event, data.data);
           }
         }
@@ -103,8 +113,8 @@ var SocketRedis = (function() {
    * @param {String} channel
    */
   Client.prototype.unsubscribe = function(channel) {
-    if (subscribes[channel]) {
-      delete subscribes[channel];
+    if (subscribes.has_channel(channel)) {
+      subscribes.delete_channel(channel);
     }
     if (sockJS.readyState === SockJS.OPEN) {
       sockjs_send(JSON.stringify({event: 'unsubscribe', data: {channel: channel}}));
@@ -146,7 +156,7 @@ var SocketRedis = (function() {
    * @param {Number} [startStamp]
    */
   var subscribe = function(channel, startStamp) {
-    for (var subscriber in subscribes[channel]) {
+    for (var subscriber in subscribes.get(channel)) {
       var event = subscriber.event;
       if (!startStamp) {
         startStamp = event.start || new Date().getTime();
