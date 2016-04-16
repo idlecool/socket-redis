@@ -109,6 +109,10 @@ var SocketRedis = (function() {
     }
   };
 
+  Client.prototype.get_subscribes = function() {
+    return subscribes;
+  }
+
   /**
    * @param {String} channel
    */
