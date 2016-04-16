@@ -1,6 +1,6 @@
 {
   "name": "socket-redis",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Redis to SockJS relay",
   "main": "socket-redis.js",
   "bin": {

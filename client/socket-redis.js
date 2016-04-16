@@ -10,8 +10,30 @@ var SocketRedis = (function() {
 
   /**
    * @type {Object}
+   *
    */
-  var subscribes = {};
+  var subscribes = (function () {
+    this.subscribers = {};
+    this.get = function(channel) {
+      if (!this.subscribers.hasOwnProperty(channel)) {
+        return [];
+      } else {
+        return this.subscribers[channel];
+      }
+    };
+
+    this.set = function(channel, start, data, onmessage) {
+      if (!this.subscribers.hasOwnProperty(channel)) {
+        this.subscribers[channel] = [];
+      }
+
+      this.subscribers[channel].push({event: {channel: channel, start: start, data: data}, callback: onmessage});
+    };
+
+    return this;
+  })();
+
+  var messageBuffer = [];
 
   /**
    * @type {Number|Null}
@@ -33,13 +55,18 @@ var SocketRedis = (function() {
             subscribe(channel, closeStamp);
           }
         }
+        while (messageBuffer.length > 0) {
+          sockjs_send(messageBuffer.shift());
+        }
         closeStamp = null;
         handler.onopen.call(handler)
       };
       sockJS.onmessage = function(event) {
         var data = JSON.parse(event.data);
         if (subscribes[data.channel]) {
-          subscribes[data.channel].callback.call(handler, data.event, data.data);
+          for (var subscriber in subscribes[data.channel]) {
+            subscriber.callback.call(handler, data.event, data.data);
+          }
         }
       };
       sockJS.onclose = function() {
@@ -66,10 +93,7 @@ var SocketRedis = (function() {
    * @param {Function} [onmessage] fn(data)
    */
   Client.prototype.subscribe = function(channel, start, data, onmessage) {
-    if (subscribes[channel]) {
-      throw 'Channel `' + channel + '` is already subscribed';
-    }
-    subscribes[channel] = {event: {channel: channel, start: start, data: data}, callback: onmessage};
+    subscribes.set(channel, start, data, onmessage);
     if (sockJS.readyState === SockJS.OPEN) {
       subscribe(channel);
     }
@@ -83,7 +107,7 @@ var SocketRedis = (function() {
       delete subscribes[channel];
     }
     if (sockJS.readyState === SockJS.OPEN) {
-      sockJS.send(JSON.stringify({event: 'unsubscribe', data: {channel: channel}}));
+      sockjs_send(JSON.stringify({event: 'unsubscribe', data: {channel: channel}}));
     }
   };
 
@@ -91,7 +115,7 @@ var SocketRedis = (function() {
    * @param {Object} data
    */
   Client.prototype.send = function(data) {
-    sockJS.send(JSON.stringify({event: 'message', data: {data: data}}));
+    sockjs_send(JSON.stringify({event: 'message', data: {data: data}}));
   };
 
   /**
@@ -100,7 +124,7 @@ var SocketRedis = (function() {
    * @param {Object} data
    */
   Client.prototype.publish = function(channel, event, data) {
-    sockJS.send(JSON.stringify({event: 'publish', data: {channel: channel, event: event, data: data}}));
+    sockjs_send(JSON.stringify({event: 'publish', data: {channel: channel, event: event, data: data}}));
   };
 
   Client.prototype.onopen = function() {
@@ -109,16 +133,26 @@ var SocketRedis = (function() {
   Client.prototype.onclose = function() {
   };
 
+  var sockjs_send = function (data) {
+    if (sockJS.readyState === SockJS.OPEN) {
+      sockJS.send(data);
+    } else {
+      messageBuffer.push(data);
+    }
+  };
+
   /**
    * @param {String} channel
    * @param {Number} [startStamp]
    */
   var subscribe = function(channel, startStamp) {
-    var event = subscribes[channel].event;
-    if (!startStamp) {
-      startStamp = event.start || new Date().getTime();
+    for (var subscriber in subscribes[channel]) {
+      var event = subscriber.event;
+      if (!startStamp) {
+        startStamp = event.start || new Date().getTime();
+      }
+      sockjs_send(JSON.stringify({event: 'subscribe', data: {channel: event.channel, data: event.data, start: startStamp}}));
     }
-    sockJS.send(JSON.stringify({event: 'subscribe', data: {channel: event.channel, data: event.data, start: startStamp}}));
   };
 
   /**
