@@ -183,13 +183,6 @@ var SocketRedis = (function() {
     clearTimeout(this._heartbeatTimeout);
   };
 
-  Client.prototype.debug = function () {
-      return {
-          sockJS: sockJS,
-          subscribes
-      }
-  };
-
   var sockjs_send = function (data) {
     if (sockJS.readyState === SockJS.OPEN) {
       sockJS.send(data);
