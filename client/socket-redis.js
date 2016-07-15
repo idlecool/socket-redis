@@ -54,9 +54,12 @@ var SocketRedis = (function() {
    * @param {String} url
    * @constructor
    */
-  function Client(url) {
+  function Client(url, _options) {
+    var options = _options || {};
     var handler = this;
-    retryDelayed(100, 5000, function(retry, resetDelay) {
+    var retryLimit = options.retryLimit || -1;
+    retryDelayed(100, 5000, function(retry, resetDelay, _retryCount) {
+      var retryCount = _retryCount || 0;
       sockJS = new SockJS(url);
       sockJS.onopen = function() {
         resetDelay();
@@ -82,7 +85,10 @@ var SocketRedis = (function() {
       };
       sockJS.onclose = function() {
         closeStamp = new Date().getTime();
-        retry();
+        if (retryLimit < 0 || retryCount < retryLimit) {
+          retryCount += 1;
+          retry(retryCount);
+        }
         handler._onclose.call(handler);
       };
     });
@@ -205,11 +211,12 @@ var SocketRedis = (function() {
       delay = delayMin;
       window.clearTimeout(timeout);
     };
-    var retry = function() {
+    var retry = function(_retryCount) {
+      var retryCount = _retryCount || 0;
       var self = this;
       window.clearTimeout(timeout);
       timeout = window.setTimeout(function() {
-        execution.call(self, retry, resetDelay);
+        execution.call(self, retry, resetDelay, retryCount);
         delay = Math.min(Math.max(delayMin, delay * 2), delayMax);
       }, delay);
     };
