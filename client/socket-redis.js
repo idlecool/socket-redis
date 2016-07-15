@@ -50,6 +50,8 @@ var SocketRedis = (function() {
    */
   var closeStamp = null;
 
+  var _isStale = false;
+
   /**
    * @param {String} url
    * @constructor
@@ -88,6 +90,8 @@ var SocketRedis = (function() {
         if (retryLimit < 0 || retryCount < retryLimit) {
           retryCount += 1;
           retry(retryCount);
+        } else {
+          _isStale = true;
         }
         handler._onclose.call(handler);
       };
@@ -118,6 +122,10 @@ var SocketRedis = (function() {
 
   Client.prototype.get_subscribes = function() {
     return subscribes;
+  };
+
+  Client.prototype.isStale = function() {
+    return _isStale;
   };
 
   /**
@@ -173,6 +181,13 @@ var SocketRedis = (function() {
 
   Client.prototype._stopHeartbeat = function() {
     clearTimeout(this._heartbeatTimeout);
+  };
+
+  Client.prototype.debug = function () {
+      return {
+          sockJS: sockJS,
+          subscribes
+      }
   };
 
   var sockjs_send = function (data) {
